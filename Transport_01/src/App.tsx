@@ -1,7 +1,46 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { OpenCVScannerAdapter, type Point } from './utils/cvAdapter';
 import { NormalBlendStrategy, ClipBlendStrategy, type ICompositionStrategy } from './utils/compositionStrategy';
 import './App.css';
+
+// --- Icons (Inline SVG) ---
+const UploadIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const RefreshIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+    <path d="M3 3v5h5" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const DownloadIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const ImageIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
+// -------------------------
 
 function App() {
   const [step, setStep] = useState<number>(1);
@@ -124,21 +163,43 @@ function App() {
 
   return (
     <div className="app-container">
-      <h1>書道Artmaker</h1>
+      <h1 className="serif-text">書道Artmaker</h1>
+
+      {/* Stepper */}
+      <div className="stepper">
+        {[1, 2, 3, 4].map((s) => (
+          <div key={s} className={`step-item ${step === s ? 'active' : ''} ${step > s ? 'completed' : ''}`}>
+            {step > s ? <CheckIcon /> : s}
+          </div>
+        ))}
+      </div>
 
       {/* ステップ 1 */}
       {step === 1 && (
-        <div className="step-section">
-          <h2>1. 作品を撮影してください</h2>
-          <input type="file" accept="image/*" capture="environment" onChange={handleCapture} />
+        <div className="panel fade-in">
+          <h2>1. 作品をアップロード</h2>
+          <p>カメラで撮影した書道の半紙画像をアップロードしてください。</p>
+          
+          <label className="upload-area">
+            <UploadIcon />
+            <span>画像を撮影または選択</span>
+            <p>タップしてカメラを起動、またはファイルを選択</p>
+            <input 
+              type="file" 
+              accept="image/*" 
+              capture="environment" 
+              onChange={handleCapture} 
+              className="hidden-input"
+            />
+          </label>
         </div>
       )}
 
       {/* ステップ 2 */}
       {step === 2 && rawImage && (
-        <div className="step-section">
-          <h2>2. 半紙の四隅をタップしてください（{corners.length}/4）</h2>
-          <p className="hint-text">左上 → 右上 → 右下 → 左下 の順番でタップすると綺麗に切り取れます。</p>
+        <div className="panel fade-in">
+          <h2>2. 四隅をタップ（{corners.length}/4）</h2>
+          <p>半紙の<strong>左上 → 右上 → 右下 → 左下</strong>の順番でタップすると、自動で綺麗に切り取られます。</p>
           
           <div className="image-picker-container">
             <img src={rawImage} alt="raw" onClick={handleImageClick} />
@@ -149,77 +210,107 @@ function App() {
             ))}
           </div>
 
-          <div className="action-buttons">
-            <button onClick={() => setCorners([])}>やり直す</button>
+          <div className="action-buttons center">
+            <button onClick={() => setCorners([])}>
+              <RefreshIcon /> やり直す
+            </button>
             <button 
               onClick={executeTransform} 
               disabled={corners.length !== 4 || !isCvReady}
               className="primary-btn"
             >
-              {!isCvReady ? "OpenCVを準備中..." : "変形を実行"}
+              <CheckIcon /> {!isCvReady ? "準備中..." : "切り取りを実行"}
             </button>
           </div>
         </div>
       )}
 
       {/* ステップ 3 */}
-      <div className="step-section" style={{ display: step >= 3 ? 'block' : 'none' }}>
-        <h2>3. 補正結果の確認</h2>
+      <div className="panel fade-in" style={{ display: step >= 3 && step !== 4 ? 'block' : 'none' }}>
+        <h2>3. 補正結果と色調整</h2>
         <canvas ref={processedCanvasRef} />
         
         {step === 3 && (
-          <div className="control-panel">
-            <div className="panel-section">
-              <p className="panel-title">色の調整と保存</p>
-              <div className="action-buttons">
-                <button onClick={toggleInvert} className={isInverted ? "btn-inverted active" : "btn-inverted"}>
-                  {isInverted ? '🔄 白背景に戻す' : '🔄 黒背景に反転'}
-                </button>
-                <button onClick={() => downloadImage(processedCanvasRef.current, isInverted ? 'shuji-black.jpg' : 'shuji-white.jpg')}>
-                  このまま保存する
-                </button>
+          <div className="control-panel fade-in">
+            <div className="options-grid">
+              <div 
+                className={`option-card ${!isInverted ? 'active' : ''}`}
+                onClick={isInverted ? toggleInvert : undefined}
+              >
+                <div className="serif-text" style={{ fontSize: '1.2rem', marginBottom: '8px' }}>白背景</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>墨文字 × 白背景</div>
               </div>
+              <div 
+                className={`option-card ${isInverted ? 'active' : ''}`}
+                onClick={!isInverted ? toggleInvert : undefined}
+              >
+                <div className="serif-text" style={{ fontSize: '1.2rem', marginBottom: '8px', color: '#fff' }}>黒背景</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>白文字 × 黒背景</div>
+              </div>
+            </div>
+
+            <div className="action-buttons center">
+              <button onClick={() => downloadImage(processedCanvasRef.current, isInverted ? 'shuji-black.jpg' : 'shuji-white.jpg')} className="primary-btn">
+                <DownloadIcon /> 保存する
+              </button>
+              <button onClick={() => {
+                setRawImage(null);
+                setStep(1);
+              }}>
+                <RefreshIcon /> 最初から
+              </button>
             </div>
             
             <hr />
             
-            <div className="panel-section">
-              <p className="panel-title">好きな背景と合成する場合（オプション）</p>
-              <input type="file" accept="image/*" onChange={handleCompositeImageSelect} />
-            </div>
+            <p style={{ textAlign: 'center', marginBottom: '1rem' }}>または、好きな背景画像と合成する</p>
+            <label className="upload-area" style={{ padding: '1.5rem' }}>
+              <ImageIcon />
+              <span>背景画像を選択</span>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleCompositeImageSelect} 
+                className="hidden-input"
+              />
+            </label>
           </div>
         )}
       </div>
 
       {/* ステップ 4 */}
-      <div className="step-section" style={{ display: step === 4 ? 'block' : 'none' }}>
-        <h2>4. 合成完了！</h2>
+      <div className="panel fade-in" style={{ display: step === 4 ? 'block' : 'none' }}>
+        <h2>4. 合成結果</h2>
 
-        <div className="action-buttons center">
-          <button 
+        <div className="options-grid">
+          <div 
+            className={`option-card ${compositeStyle === 'normal' ? 'active' : ''}`}
             onClick={() => setCompositeStyle('normal')}
-            className={compositeStyle === 'normal' ? "" : "dimmed"}
           >
-            {compositeStyle === 'normal' ? '✅ ' : ''}
-            {isInverted ? '写真文字 × 黒背景' : '墨文字 × 背景写真'}
-          </button>
-          <button 
+            <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>標準ブレンド</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              {isInverted ? '写真文字 × 黒背景' : '墨文字 × 背景写真'}
+            </div>
+          </div>
+          <div 
+            className={`option-card ${compositeStyle === 'clip' ? 'active' : ''}`}
             onClick={() => setCompositeStyle('clip')}
-            className={compositeStyle === 'clip' ? "" : "dimmed"}
           >
-            {compositeStyle === 'clip' ? '✅ ' : ''}
-            {isInverted ? '白文字 × 背景写真' : '写真文字 × 白背景'}
-          </button>
+            <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>クリップブレンド</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              {isInverted ? '白文字 × 背景写真' : '写真文字 × 白背景'}
+            </div>
+          </div>
         </div>
 
         <canvas ref={compositeCanvasRef} />
         
-        <div className="action-buttons center" style={{ marginTop: '15px' }}>
+        <div className="action-buttons center">
           <button onClick={() => downloadImage(compositeCanvasRef.current, 'shuji-composite.jpg')} className="primary-btn">
-            合成画像を保存する
+            <DownloadIcon /> 合成画像を保存
           </button>
           <button onClick={() => setStep(3)}>
-            やり直す
+            <RefreshIcon /> やり直す
           </button>
         </div>
       </div>

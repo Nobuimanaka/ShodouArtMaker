@@ -1,225 +1,355 @@
-/* Google Fontsから和風で美しい「しっぽり明朝」を読み込み */
-@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Shippori+Mincho:wght@400;700&display=swap');
 
-/* 全体のベース設定 */
+:root {
+  --bg-color: #0c0c0e;
+  --panel-bg: rgba(25, 25, 28, 0.6);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text-primary: #f5f0e6;
+  --text-secondary: #a1a1aa;
+  --accent-color: #E03C31;
+  --accent-hover: #b71c1c;
+  --border-radius: 16px;
+  --transition-speed: 0.3s;
+  
+  --font-serif: 'Shippori Mincho', "Yu Mincho", "MS PMincho", serif;
+  --font-sans: 'Inter', "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+}
+
 body {
-  background-color: #0a0a0a;
-  color: #f0eadd;
-  font-family: 'Shippori Mincho', "Yu Mincho", "MS PMincho", serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   margin: 0;
   padding: 0;
-  background-image: radial-gradient(#222 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-/* メインコンテナ */
-.app-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #141414;
+  /* Subtle dot pattern */
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
   min-height: 100vh;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
-  border-left: 2px solid #7a1717;
-  border-right: 2px solid #7a1717;
-  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
-/* 各ステップのブロック */
-.step-section {
-  margin-top: 20px;
+/* Typography */
+h1, h2, .serif-text {
+  font-family: var(--font-serif);
 }
 
-/* 見出し */
 h1 {
-  color: #ffffff;
-  text-align: center;
-  border-bottom: 2px solid #7a1717;
-  padding-bottom: 15px;
-  letter-spacing: 4px;
+  font-size: 2rem;
   font-weight: 700;
+  text-align: center;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
 }
 
 h2 {
-  color: #f0eadd;
-  border-left: 5px solid #7a1717;
-  padding-left: 12px;
-  font-size: 1.5rem;
-  letter-spacing: 2px;
+  font-size: 1.25rem;
+  font-weight: 400;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* テキスト・説明文 */
 p {
-  color: #aaaaaa;
+  color: var(--text-secondary);
   line-height: 1.6;
+  font-size: 0.95rem;
 }
 
-.hint-text {
-  font-size: 12px;
+/* Layout */
+.app-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2.5rem 2rem;
+  box-sizing: border-box;
+}
+
+.panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  margin-bottom: 1.5rem;
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Stepper */
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  position: relative;
+  padding: 0 10px;
+}
+
+.stepper::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: 0;
+  transform: translateY(-50%);
+}
+
+.step-item {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #2a2a2e;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  position: relative;
+  z-index: 1;
+  border: 2px solid var(--bg-color);
+  transition: all var(--transition-speed);
+}
+
+.step-item.active {
+  background: var(--accent-color);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(224, 60, 49, 0.4);
+}
+
+.step-item.completed {
+  background: #3f3f46;
   color: #fff;
 }
 
-/* 画像プレビューとピンの枠組み */
+/* Upload Area */
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  background: rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.upload-area:hover {
+  border-color: var(--accent-color);
+  background: rgba(224, 60, 49, 0.05);
+}
+
+.upload-area svg {
+  margin-bottom: 1rem;
+  opacity: 0.7;
+  transition: opacity var(--transition-speed);
+}
+
+.upload-area:hover svg {
+  opacity: 1;
+  color: var(--accent-color);
+}
+
+.upload-area span {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.upload-area p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+input[type="file"].hidden-input {
+  display: none;
+}
+
+/* Image Picker & Pins */
 .image-picker-container {
   position: relative;
   display: inline-block;
-  border: 2px solid #ccc;
-  margin-bottom: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  margin: 1rem 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .image-picker-container img {
-  max-width: 100%;
+  width: 100%;
+  height: auto;
   display: block;
   cursor: crosshair;
 }
 
-/* 赤いピン（タップした場所） */
 .corner-pin {
   position: absolute;
-  width: 16px;
-  height: 16px;
-  background-color: red;
-  border: 2px solid white;
+  width: 24px;
+  height: 24px;
+  background-color: var(--accent-color);
+  border: 2px solid #fff;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { transform: translate(-50%, -50%) scale(0); }
+  to { transform: translate(-50%, -50%) scale(1); }
 }
 
 .corner-pin span {
   color: white;
-  font-size: 10px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
-/* コントロールパネル（Step3の設定エリア） */
-.control-panel {
-  margin-top: 15px;
-  padding: 15px;
-  background-color: #1e1e1e;
-  border: 1px solid #333;
-}
-
-.panel-section {
-  margin-bottom: 20px;
-}
-
-.panel-title {
-  margin: 0 0 10px 0;
-  font-weight: bold;
-}
-
-/* ボタンを並べるコンテナ */
+/* Buttons */
 .action-buttons {
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 1.5rem;
   flex-wrap: wrap;
-  margin-top: 10px;
 }
 
 .action-buttons.center {
   justify-content: center;
 }
 
-/* 基本ボタンデザイン */
 button {
-  background-color: #7a1717;
-  color: #ffffff;
-  border: 1px solid #a32222;
-  border-radius: 0px;
-  padding: 12px 24px;
-  font-family: inherit;
-  font-size: 1rem;
-  letter-spacing: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 3px 3px 0px rgba(240, 234, 221, 0.2);
+  transition: all 0.2s ease;
 }
 
 button:hover:not(:disabled) {
-  background-color: #9e1f1f;
-  transform: translateY(-2px);
-  box-shadow: 5px 5px 0px rgba(240, 234, 221, 0.3);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
-/* 無効化されたボタン */
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 button:disabled {
-  background-color: #2a2a2a;
-  color: #666666;
-  border-color: #444444;
+  opacity: 0.4;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
-/* 完了・決定などのメインボタン */
 button.primary-btn {
-  background-color: #4CAF50;
-  border-color: #3d8b40;
+  background-color: var(--accent-color);
+  border-color: var(--accent-hover);
+  color: #fff;
 }
 
 button.primary-btn:hover:not(:disabled) {
-  background-color: #43a047;
+  background-color: var(--accent-hover);
+  box-shadow: 0 4px 12px rgba(224, 60, 49, 0.3);
 }
 
-/* 反転ボタンの切り替えデザイン */
-button.btn-inverted {
-  background-color: #333;
-  border-color: #555;
-}
-
-button.btn-inverted.active {
-  background-color: #f0eadd;
-  color: #000;
-  border-color: #fff;
-  box-shadow: none;
-}
-
-/* 非アクティブ状態（半透明） */
-button.dimmed {
-  opacity: 0.4;
-}
-
-/* キャンバスの共通設定 */
+/* Canvas */
 canvas {
-  max-width: 100%;
-  border: 2px solid #7a1717;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.8);
-  display: block; /* 余白を消す */
-}
-
-/* ファイル選択ボタン */
-input[type="file"] {
-  background-color: #1e1e1e;
-  color: #f0eadd;
-  padding: 10px;
-  border: 1px solid #444;
   width: 100%;
-  box-sizing: border-box;
-  margin-top: 5px;
-  cursor: pointer;
-  font-family: inherit;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  display: block;
+  margin: 1rem 0;
+  background: #000;
 }
 
-input[type="file"]::file-selector-button {
-  background-color: #333;
-  color: #fff;
-  border: 1px solid #555;
-  padding: 8px 16px;
-  margin-right: 15px;
+/* Options Grid (Step 3/4) */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.option-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
   cursor: pointer;
-  font-family: inherit;
   transition: all 0.2s;
 }
 
-input[type="file"]::file-selector-button:hover {
-  background-color: #7a1717;
-  border-color: #a32222;
+.option-card:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
-/* 区切り線 */
+.option-card.active {
+  border-color: var(--accent-color);
+  background: rgba(224, 60, 49, 0.05);
+}
+
 hr {
   border: none;
-  border-top: 1px dashed #7a1717;
-  margin: 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 1.5rem 0;
+}
+
+@media (max-width: 600px) {
+  .app-container {
+    padding: 1rem;
+    margin: 0;
+  }
+  .panel {
+    padding: 1.5rem;
+  }
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
 }
