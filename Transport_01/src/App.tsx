@@ -154,12 +154,30 @@ function App() {
   };
 
   const downloadImage = (canvas: HTMLCanvasElement | null, fileName: string) => {
-    if (!canvas) return;
+  if (!canvas) return;
+
+  // toBlobを使用して、巨大なData URLによるSafariのクラッシュや制限を回避
+  canvas.toBlob((blob) => {
+    if (!blob) {
+      alert("画像の生成に失敗しました。");
+      return;
+    }
+
+    // Blobから一時的なURLを生成
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.download = fileName;
-    link.href = canvas.toDataURL('image/jpeg', 0.9);
+    link.href = url;
+
+    // Safari対策：DOMに一度追加してからクリックイベントを発火させる
+    document.body.appendChild(link);
     link.click();
-  };
+    document.body.removeChild(link);
+
+    // メモリリークを防ぐため、使用後にURLを解放
+    URL.revokeObjectURL(url);
+  }, 'image/jpeg', 0.9); // フォーマットと画質を指定
+};
 
   return (
     <div className="app-container">
