@@ -153,30 +153,48 @@ function App() {
     }
   };
 
-  const downloadImage = (canvas: HTMLCanvasElement | null, fileName: string) => {
+  const downloadImage = async (canvas: HTMLCanvasElement | null, fileName: string) => {
   if (!canvas) return;
 
-  // toBlobを使用して、巨大なData URLによるSafariのクラッシュや制限を回避
-  canvas.toBlob((blob) => {
+  canvas.toBlob(async (blob) => {
     if (!blob) {
       alert("画像の生成に失敗しました。");
       return;
     }
 
-    // Blobから一時的なURLを生成
+    // 1. Web Share API が使える環境（iOS Safariなど）の場合
+    if (navigator.share && navigator.canShare) {
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      
+      // 画像ファイルをシェアできるかチェック
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: '書道作品を保存',
+          });
+          // ユーザーが「画像を保存」を選べばカメラロールに入ります
+          return; 
+        } catch (error) {
+          console.log("共有がキャンセルされた、または失敗しました:", error);
+          // エラー時（ユーザーキャンセル含む）は処理を終了
+          return; 
+        }
+      }
+    }
+
+    // 2. Web Share API が使えない環境（PCなど）のフォールバック処理
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.download = fileName;
     link.href = url;
 
-    // Safari対策：DOMに一度追加してからクリックイベントを発火させる
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    // メモリリークを防ぐため、使用後にURLを解放
     URL.revokeObjectURL(url);
-  }, 'image/jpeg', 0.9); // フォーマットと画質を指定
+  }, 'image/jpeg', 0.9);
 };
 
   return (
