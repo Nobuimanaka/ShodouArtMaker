@@ -51,6 +51,10 @@ function App() {
   const [compositeStyle, setCompositeStyle] = useState<'normal' | 'clip'>('normal');
   const [isInverted, setIsInverted] = useState<boolean>(false);
 
+  // ドラッグ状態の管理
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
   const processedCanvasRef = useRef<HTMLCanvasElement>(null);
   const compositeCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -108,12 +112,44 @@ function App() {
 
   const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
     if (corners.length >= 4) return;
+    if (draggingIndex !== null) return;
     const rect = e.currentTarget.getBoundingClientRect();
     setCorners([...corners, {
       x: (e.clientX - rect.left) / rect.width,
       y: (e.clientY - rect.top) / rect.height
     }]);
   };
+
+  // --- ドラッグ処理 ---
+  const getPointerPosition = (e: React.PointerEvent): Point | null => {
+    const container = imageContainerRef.current;
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height)),
+    };
+  };
+
+  const handlePinPointerDown = (e: React.PointerEvent, index: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setDraggingIndex(index);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (draggingIndex === null) return;
+    e.preventDefault();
+    const pos = getPointerPosition(e);
+    if (!pos) return;
+    setCorners(prev => prev.map((c, i) => i === draggingIndex ? pos : c));
+  };
+
+  const handlePointerUp = () => {
+    setDraggingIndex(null);
+  };
+
 
   const executeTransform = () => {
     if (corners.length < 4) return;
@@ -199,7 +235,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <h1 className="serif-text">書道Artmaker</h1>
+      <h1 className="serif-text">書道ArtMaker</h1>
 
       {/* Stepper */}
       <div className="stepper">
@@ -235,12 +271,54 @@ function App() {
       {step === 2 && rawImage && (
         <div className="panel fade-in">
           <h2>2. 四隅をタップ（{corners.length}/4）</h2>
-          <p>半紙の<strong>左上 → 右上 → 右下 → 左下</strong>の順番でタップすると、自動で綺麗に切り取られます。</p>
+          <p>半紙の<strong>左上 → 右上 → 右下 → 左下</strong>の順番でタップ。{corners.length === 4 && <><br /><span className="drag-hint">ピンをドラッグして微調整できます。</span></>}</p>
           
-          <div className="image-picker-container">
-            <img src={rawImage} alt="raw" onClick={handleImageClick} />
+          <div
+            className="image-picker-container"
+            ref={imageContainerRef}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
+            <img src={rawImage} alt="raw" onClick={handleImageClick} draggable={false} />
+
+            {/* 4点指定後のオーバーレイ（選択範囲外を暗く表示） */}
+            {corners.length === 4 && (
+              <svg className="selection-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <defs>
+                  <mask id="selection-mask">
+                    <rect x="0" y="0" width="100" height="100" fill="white" />
+                    <polygon
+                      points={corners.map(c => `${c.x * 100},${c.y * 100}`).join(' ')}
+                      fill="black"
+                    />
+                  </mask>
+                </defs>
+                {/* 枠線: 選択範囲のアウトライン */}
+                <polygon
+                  points={corners.map(c => `${c.x * 100},${c.y * 100}`).join(' ')}
+                  fill="none"
+                  stroke="rgba(224,60,49,0.8)"
+                  strokeWidth="0.3"
+                  vectorEffect="non-scaling-stroke"
+                />
+                {/* 暗いオーバーレイ（選択範囲の穴あき） */}
+                <rect
+                  x="0" y="0" width="100" height="100"
+                  fill="rgba(0,0,0,0.55)"
+                  mask="url(#selection-mask)"
+                />
+              </svg>
+            )}
+
+            {/* コーナーピン（4点揃ったらドラッグ可能） */}
             {corners.map((c, index) => (
-              <div key={index} className="corner-pin" style={{ left: `${c.x * 100}%`, top: `${c.y * 100}%` }}>
+              <div
+                key={index}
+                className={`corner-pin ${corners.length === 4 ? 'draggable' : ''} ${draggingIndex === index ? 'dragging' : ''}`}
+                style={{ left: `${c.x * 100}%`, top: `${c.y * 100}%` }}
+                onPointerDown={corners.length === 4 ? (e) => handlePinPointerDown(e, index) : undefined}
+              >
                 <span>{index + 1}</span>
               </div>
             ))}

@@ -229,6 +229,29 @@ input[type="file"].hidden-input {
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 3;
+  transition: width 0.2s, height 0.2s, box-shadow 0.2s;
+}
+
+/* 4点揃ったらドラッグ可能にする */
+.corner-pin.draggable {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  width: 28px;
+  height: 28px;
+}
+
+.corner-pin.draggable:hover {
+  box-shadow: 0 0 0 6px rgba(224, 60, 49, 0.25), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.corner-pin.dragging {
+  cursor: grabbing;
+  width: 32px;
+  height: 32px;
+  box-shadow: 0 0 0 8px rgba(224, 60, 49, 0.35), 0 4px 16px rgba(0, 0, 0, 0.6);
+  z-index: 10;
 }
 
 @keyframes popIn {
@@ -240,6 +263,27 @@ input[type="file"].hidden-input {
   color: white;
   font-size: 12px;
   font-weight: 600;
+  user-select: none;
+}
+
+/* Selection Overlay (SVG) */
+.selection-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Drag Hint */
+.drag-hint {
+  color: var(--accent-color);
+  font-weight: 500;
+  font-size: 0.85rem;
+  animation: fadeIn 0.4s ease-in-out;
 }
 
 /* Buttons */
