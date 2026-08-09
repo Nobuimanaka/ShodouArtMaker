@@ -33,6 +33,16 @@ const DownloadIcon = () => (
   </svg>
 );
 
+const ShareIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+  </svg>
+);
+
 const ImageIcon = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -189,49 +199,57 @@ function App() {
     }
   };
 
-  const downloadImage = async (canvas: HTMLCanvasElement | null, fileName: string) => {
-  if (!canvas) return;
-
-  canvas.toBlob(async (blob) => {
-    if (!blob) {
-      alert("画像の生成に失敗しました。");
-      return;
-    }
-
-    // 1. Web Share API が使える環境（iOS Safariなど）の場合
-    if (navigator.share && navigator.canShare) {
-      const file = new File([blob], fileName, { type: 'image/jpeg' });
-      
-      // 画像ファイルをシェアできるかチェック
-      if (navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: '書道作品を保存',
-          });
-          // ユーザーが「画像を保存」を選べばカメラロールに入ります
-          return; 
-        } catch (error) {
-          console.log("共有がキャンセルされた、または失敗しました:", error);
-          // エラー時（ユーザーキャンセル含む）は処理を終了
-          return; 
-        }
+  // Web Share API が利用可能かどうか
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => {
+    if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
+      try {
+        const testFile = new File([''], 'test.jpg', { type: 'image/jpeg' });
+        setCanShare(navigator.canShare({ files: [testFile] }));
+      } catch {
+        setCanShare(false);
       }
     }
+  }, []);
 
-    // 2. Web Share API が使えない環境（PCなど）のフォールバック処理
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = fileName;
-    link.href = url;
+  // 端末本体に直接ダウンロード保存（Android: Downloadsフォルダ → ギャラリーで参照可能）
+  const downloadImage = (canvas: HTMLCanvasElement | null, fileName: string) => {
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        alert("画像の生成に失敗しました。");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 'image/jpeg', 0.9);
+  };
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-  }, 'image/jpeg', 0.9);
-};
+  // SNSやアプリへ共有（Web Share API）
+  const shareImage = async (canvas: HTMLCanvasElement | null, fileName: string) => {
+    if (!canvas) return;
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        alert("画像の生成に失敗しました。");
+        return;
+      }
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      try {
+        await navigator.share({
+          files: [file],
+          title: '書道ArtMaker',
+        });
+      } catch (error) {
+        console.log("共有がキャンセルされました:", error);
+      }
+    }, 'image/jpeg', 0.9);
+  };
 
   return (
     <div className="app-container">
@@ -367,6 +385,11 @@ function App() {
               <button onClick={() => downloadImage(processedCanvasRef.current, isInverted ? 'shuji-black.jpg' : 'shuji-white.jpg')} className="primary-btn">
                 <DownloadIcon /> 保存する
               </button>
+              {canShare && (
+                <button onClick={() => shareImage(processedCanvasRef.current, isInverted ? 'shuji-black.jpg' : 'shuji-white.jpg')}>
+                  <ShareIcon /> 共有する
+                </button>
+              )}
               <button onClick={() => {
                 setRawImage(null);
                 setStep(1);
@@ -423,6 +446,11 @@ function App() {
           <button onClick={() => downloadImage(compositeCanvasRef.current, 'shuji-composite.jpg')} className="primary-btn">
             <DownloadIcon /> 合成画像を保存
           </button>
+          {canShare && (
+            <button onClick={() => shareImage(compositeCanvasRef.current, 'shuji-composite.jpg')}>
+              <ShareIcon /> 共有する
+            </button>
+          )}
           <button onClick={() => setStep(3)}>
             <RefreshIcon /> やり直す
           </button>
